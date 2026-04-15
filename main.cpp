@@ -301,35 +301,21 @@ public:
 int main()
 {
     CacheSimulator simulator(3);
-    /* ========================================================
-       Simulating: for(int i=0; i<8; i++) { arr[i] *= 2; }
-       ======================================================== */
+    // --- Spatial Locality ---
+    simulator.addRequest(false, 0x00001000, 0); // Read arr[0] -> Compulsory Miss, Loads into cache (Clean) -> Fetches arr[0-3]
+    simulator.addRequest(true, 0x00001000, 10); // Write arr[0] -> Hit (Sets Dirty bit to 1)
+    simulator.addRequest(false, 0x00001004, 0); // Read arr[1] -> HIT (Due to Spatial Locality)
+    simulator.addRequest(true, 0x00001004, 20); // Write arr[1] -> HIT
+    simulator.addRequest(false, 0x00001008, 0); // Read arr[2] -> HIT
+    simulator.addRequest(true, 0x00001008, 30); // Write arr[2] -> HIT
+    simulator.addRequest(false, 0x0000100C, 0); // Read arr[3] -> HIT
+    simulator.addRequest(true, 0x0000100C, 40); // Write arr[3] -> HIT
+    // --- Clean Eviction ---
+    simulator.addRequest(false, 0x0000A000, 0); // Read a block (Clean)
+    simulator.addRequest(false, 0x0000E000, 0); // Conflict Miss, but block is clean, skips WRITE_BACK and goes to WRITE_ALLOCATE.
 
-    // --- Processing elements 0 through 3 (Fits in Block 1) ---
-    simulator.addRequest(false, 0x0000A000, 0); // Read arr[0] -> Compulsory Miss (Fetches arr[0-3])
-    simulator.addRequest(true, 0x0000A000, 10); // Write arr[0] -> Hit (Sets Dirty)
-
-    simulator.addRequest(false, 0x0000A004, 0); // Read arr[1] -> HIT (Spatial Locality)
-    simulator.addRequest(true, 0x0000A004, 20); // Write arr[1] -> HIT
-
-    simulator.addRequest(false, 0x0000A008, 0); // Read arr[2] -> HIT
-    simulator.addRequest(true, 0x0000A008, 30); // Write arr[2] -> HIT
-
-    simulator.addRequest(false, 0x0000A00C, 0); // Read arr[3] -> HIT
-    simulator.addRequest(true, 0x0000A00C, 40); // Write arr[3] -> HIT
-
-    // --- Processing elements 4 through 7 (Fits in Block 2) ---
-    simulator.addRequest(false, 0x0000A010, 0); // Read arr[4] -> Miss (Fetches arr[4-7])
-    simulator.addRequest(true, 0x0000A010, 50); // Write arr[4] -> HIT (Sets Dirty)
-
-    simulator.addRequest(false, 0x0000A014, 0); // Read arr[5] -> HIT
-    simulator.addRequest(true, 0x0000A014, 60); // Write arr[5] -> HIT
-
-    simulator.addRequest(false, 0x0000A018, 0); // Read arr[6] -> HIT
-    simulator.addRequest(true, 0x0000A018, 70); // Write arr[6] -> HIT
-
-    simulator.addRequest(false, 0x0000A01C, 0); // Read arr[7] -> HIT
-    simulator.addRequest(true, 0x0000A01C, 80); // Write arr[7] -> HIT
+    // --- Write-Triggered Dirty Eviction ---
+    simulator.addRequest(true, 0x00005000, 15); // Conflict miss on a WRITE. Goes to WRITE_BACK -> ALLOCATE -> COMPARE_TAG (Write Hit, sets block dirty)
 
     simulator.run();
 

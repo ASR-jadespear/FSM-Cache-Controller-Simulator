@@ -1,0 +1,4 @@
+// ignore vs code folder
+.vscode/
+main
+*.exe
